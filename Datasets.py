@@ -36,5 +36,5 @@ class BratsDataset_seg(torch.utils.data.Dataset):
 
         return output
 
-data = BratsDataset_seg('/Media/NAS/nas_32/hojun/MoNuSeg_data')
+data = BratsDataset_seg('/media/NAS/nas_32/hojun/MoNuSeg_data')
 print(data[0]['label'])
