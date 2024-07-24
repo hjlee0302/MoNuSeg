@@ -22,7 +22,6 @@ class BratsDataset_seg(torch.utils.data.Dataset):
         png_img = Image.open(os.path.join(self.img_dir, self.img_list[idx]))
         png_img = png_img.resize((256,256))
         np_img = np.array(png_img)
-        print(np_img.shape)
         transform = transforms.ToTensor()
         img = transform(np_img)
         png_lbl = Image.open(os.path.join(self.lbl_dir, self.lbl_list[idx]))
