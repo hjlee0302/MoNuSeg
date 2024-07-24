@@ -5,13 +5,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 from Datasets import BratsDataset_seg
 from test import evaluate
+import segmentation_models_pytorch as smp
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu') # gpu가 사용가능하다면 gpu를 사용하고, 아니라면 cpu를 사용함
 print(device)
 ## Hyper-parameters
 num_epochs = 20
 
-model_channel = UNet(3, 3)
+model_channel = smp.Unet(
+    encoder_name="resnet34",        # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
+    encoder_weights="imagenet",     # use `imagenet` pre-trained weights for encoder initialization
+    in_channels=3,                  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
+    classes=3,                      # model output channels (number of classes in your dataset)
+)
 model_channel.to(device)
 
 optimizer = torch.optim.Adam(model_channel.parameters(), lr=0.0005)#weight_decay=0.0001
