@@ -19,12 +19,17 @@ class BratsDataset_seg(torch.utils.data.Dataset):
         return len(self.img_list)
 
     def __getitem__(self, idx):
+        padding = (10, 10, 10, 10)
         png_img = Image.open(os.path.join(self.img_dir, self.img_list[idx]))
         np_img = np.array(png_img)
+        transform = transforms.Pad(padding, fill=0)
+        np_img = transform(np_img)
         transform = transforms.ToTensor()
         img = transform(np_img)
         png_lbl = Image.open(os.path.join(self.lbl_dir, self.lbl_list[idx]))
         np_lbl = np.array(png_lbl)
+        transform = transforms.Pad(padding, fill=0)
+        np_lbl = transform(np_lbl)
         transform = transforms.ToTensor()
         label = transform(np_lbl)
         output = {'img': img, 'label': label}
