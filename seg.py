@@ -25,9 +25,9 @@ lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
                                                gamma=1) #0.9 ## learning rate decay
 
 ## data loader
-train_dataset = BratsDataset_seg('/home/hojunlee/Desktop/MoNuSeg_oridata')
-valid_dataset = BratsDataset_seg('/home/hojunlee/Desktop/MoNuSeg_oridata', 'valid')
-test_dataset = BratsDataset_seg('/home/hojunlee/Desktop/MoNuSeg_oridata', 'test')
+train_dataset = BratsDataset_seg('/home/hojun/MoNuSeg_oridata')
+valid_dataset = BratsDataset_seg('/home/hojun/MoNuSeg_oridata', 'valid')
+test_dataset = BratsDataset_seg('/home/hojun/MoNuSeg_oridata', 'test')
 
 
 train_data_loader = torch.utils.data.DataLoader(
