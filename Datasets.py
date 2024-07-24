@@ -30,11 +30,15 @@ class BratsDataset_seg(torch.utils.data.Dataset):
         transform = transforms.Pad(padding, fill=0)
         png_lbl = transform(png_lbl)
         np_lbl = np.array(png_lbl)
+        for i in range(256):
+            for j in range(256):
+                if np_lbl[i][j] != 0:
+                    np_lbl[i][j] = 1
         transform = transforms.ToTensor()
         label = transform(np_lbl)
         output = {'img': img, 'label': label}
 
         return output
 
-data = BratsDataset_seg('/media/NAS/nas_32/hojun/MoNuSeg_data')
-print(data[0]['label'].shape)
+#data = BratsDataset_seg('/media/NAS/nas_32/hojun/MoNuSeg_data')
+#print(data[0]['label'].shape)
