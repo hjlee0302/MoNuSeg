@@ -7,7 +7,7 @@ from Datasets import BratsDataset_seg
 from test import evaluate
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu') # gpu가 사용가능하다면 gpu를 사용하고, 아니라면 cpu를 사용함
-print(torch.__version__)
+print(device)
 ## Hyper-parameters
 num_epochs = 5
 n_channels = 3
