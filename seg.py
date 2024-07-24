@@ -11,7 +11,7 @@ print(device)
 ## Hyper-parameters
 num_epochs = 20
 
-model_channel = UNet()
+model_channel = UNet(3, 3)
 model_channel.to(device)
 
 optimizer = torch.optim.Adam(model_channel.parameters(), lr=0.0005)#weight_decay=0.0001
