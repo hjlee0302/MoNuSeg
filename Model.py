@@ -26,10 +26,10 @@ class UNet(nn.Module):
         enc3 = self.enc3(self.pool(enc2))
         enc4 = self.enc4(self.pool(enc3))
         
-        dec4 = self.upconv4(self.pool(enc4))
-        dec3 = self.upconv3(torch.cat((dec4, enc4), 1))
-        dec2 = self.upconv2(torch.cat((dec3, enc3), 1))
-        dec1 = self.upconv1(torch.cat((dec2, enc2), 1))
+        dec4 = self.center_crop(self.upconv4(self.pool(enc4)), enc4)
+        dec3 = self.center_crop(self.upconv3(torch.cat((dec4, enc4), 1)), enc3)
+        dec2 = self.center_crop(self.upconv2(torch.cat((dec3, enc3), 1)), enc2)
+        dec1 = self.center_crop(self.upconv1(torch.cat((dec2, enc2), 1)), enc1)
         
         return torch.sigmoid(self.final_layer(torch.cat((dec1, enc1), 1)))
 
@@ -52,3 +52,9 @@ class UNet(nn.Module):
             nn.ReLU(),
         )
         return block
+
+    def center_crop(self, layer, target_size):
+        _, _, layer_height, layer_width = layer.size()
+        diff_y = (layer_height - target_size.size(2)) // 2
+        diff_x = (layer_width - target_size.size(3)) // 2
+        return layer[:, :, diff_y:diff_y + target_size.size(2), diff_x:diff_x + target_size.size(3)]
