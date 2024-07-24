@@ -10,10 +10,8 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 print(device)
 ## Hyper-parameters
 num_epochs = 20
-n_channels = 3
-n_classes = 3
 
-model_channel = UNet(n_channels=n_channels, n_classes=n_classes)
+model_channel = UNet()
 model_channel.to(device)
 
 optimizer = torch.optim.Adam(model_channel.parameters(), lr=0.0005)#weight_decay=0.0001
