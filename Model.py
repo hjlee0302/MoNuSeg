@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
+
 class UNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
@@ -19,7 +20,7 @@ class UNet(nn.Module):
         
         self.final_layer = nn.Conv2d(64, 1, kernel_size=1)
 
-    def __call__(self, x):
+    def forward(self, x):
         enc1 = self.enc1(x)
         enc2 = self.enc2(self.pool(enc1))
         enc3 = self.enc3(self.pool(enc2))
@@ -34,9 +35,9 @@ class UNet(nn.Module):
 
     def contracting_block(self, in_channels, out_channels, kernel_size=3):
         block = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size),
+            nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=1),
             nn.ReLU(),
-            nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size),
+            nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, padding=1),
             nn.ReLU(),
         )
         return block
@@ -45,9 +46,9 @@ class UNet(nn.Module):
         block = nn.Sequential(
             nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2),
             nn.ReLU(),
-            nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size),
+            nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, padding=1),
             nn.ReLU(),
-            nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size),
+            nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, padding=1),
             nn.ReLU(),
         )
         return block
