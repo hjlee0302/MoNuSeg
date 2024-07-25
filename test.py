@@ -1,58 +1,42 @@
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 import numpy as np
-
+import torch
+from PIL import Image
+import torchvision.transforms as transforms
 def evaluate(model, test_data_loader, device):
-    accuracy = 0
-
-    iou_list = [0, 0, 0]
-
+    
+    all_preds = []
+    all_labels = []
+    root = '/home/hojun/MoNuSeg/MoNuSeg_results/'
+    transform_to_pil = transforms.ToPILImage()
+    model.eval()
     for iter, pack in enumerate(test_data_loader):
         img = pack['img'].to(device)
-        label = pack['label']
+        label = pack['label'].to(device)
         pred = model(img)
-        pred = pred.cpu().detach().numpy()
-        (B, C, W, H) = pred.shape
-        pred = np.argmax(pred[0], axis=0)
+        pred = torch.argmax(pred, dim=1)
+        
+        if iter < 20:
+          
+            image = transform_to_pil(img[0])
+            image.save(root + f'img_{iter}.png')
+            prediction = transform_to_pil(pred[0].float())
+            prediction.save(root + f'pred_{iter}.png')
+            mask = transform_to_pil(label[0].float())
+            mask.save(root + f'label_{iter}.png')
 
-        for num_channel in range(C):
-            count_pred = np.sum(pred == num_channel)
-            count_label = np.sum(label[0].numpy() == num_channel)
-            intersection = np.sum(label[0].numpy() * 4 == pred + (3 * num_channel))
-            iou = intersection / (count_pred + count_label - intersection + 1e-10)
-            iou_list[num_channel] += iou
+        all_preds.append(pred.cpu().numpy())
+        all_labels.append(label.cpu().numpy())
+    
+    all_preds = np.concatenate(all_preds).flatten()
+    all_labels = np.concatenate(all_labels).flatten()
 
-                # plt.imshow(pred==num_channel)
-                # plt.show()
-                # plt.imshow(label[0].numpy()==num_channel)
-                # plt.show()
-                # plt.imshow(label[0].numpy()*4 == pred+(3*num_channel))
-                # plt.show()
-                # print(count_pred, count_label, intersection, iou)
-        ious = []
-        for channel in range(len(iou_list)):
-            zero_index = np.where(iou_list[channel] == 0)
-            miou = np.delete(iou_list[channel], zero_index)
-            print('{} channel miou: {}'.format(channel, miou / len(test_data_loader)))
-            ious.append(miou / len(test_data_loader))
-        print(f"average iou : {np.mean(ious[1:])}")
+    accuracy = accuracy_score(all_labels, all_preds)
+    precision = precision_score(all_labels, all_preds, average='macro', zero_division=0)
+    recall = recall_score(all_labels, all_preds, average='macro', zero_division=0)
+    f1 = f1_score(all_labels, all_preds, average='macro', zero_division=0)
 
-    accuracy = 0
-    pred_list = []
-    label_list = []
-    for iter, pack in enumerate(test_data_loader):
-        img = pack['img'].to(device)
-        label = pack['label']
-        pred = model(img)
-        pred = pred.cpu().detach().numpy()
-        label_list.append(label)
-
-        if pred.shape[1] == 1:
-            pred_list = np.concatenate(pred_list, axis=0).astype(np.int)
-            label_list = [np.array(e) for e in label_list]
-            label_list = np.concatenate(np.array(label_list), axis=0)
-        # print(pred_list)
-        # print(label_list)
-        print('accuracy: {} recall: {} precision: {} f1 score: {}'.format(accuracy_score(label_list, pred_list),
-                                                                          recall_score(label_list, pred_list),
-                                                                          precision_score(label_list, pred_list),
-                                                                          f1_score(label_list, pred_list)))
+    print('accuracy: {} recall: {} precision: {} f1 score: {}'.format(accuracy,
+                                                                          recall,
+                                                                          precision,
+                                                                          f1))
