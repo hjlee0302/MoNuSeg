@@ -83,7 +83,6 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
                     print('{}th epoch {}/{} iter: train loss={}, valid loss={}, lr={}' \
                           .format(epoch + 1, train_iter + 1, len(train_data_loader), train_loss,
                                   valid_loss / len(valid_data_loader), lr_scheduler.get_last_lr()))
-                  
     plt.figure()
     plt.plot(train_loss_list, label='Training Loss')
     plt.plot(valid_loss_list, label='Validation Loss')
@@ -93,5 +92,5 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
     plt.legend()
     plt.grid(True)
     plt.savefig('loss_graph.png')
- 
+    plt.show()
     return min_valid_loss
