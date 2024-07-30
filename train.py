@@ -5,7 +5,7 @@ import torchvision.transforms as transforms
 import torch.nn.functional as F
 import torch
 import torch.nn as nn
-
+import matplotlib.pyplot as plt
 
 def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_loader, device, epoch, lr_scheduler,
                     print_freq=10, min_valid_loss=100):
