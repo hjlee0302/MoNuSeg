@@ -44,6 +44,8 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
 
                     loss = criterion(pred, label)
                     valid_loss += loss.item()
+                    train_loss_list.append(train_loss)
+                    valid_loss_list.append(valid_loss / len(valid_data_loader))
 
                 if min_valid_loss >= valid_loss / len(valid_data_loader):
 
@@ -55,8 +57,6 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
                           .format(epoch + 1, train_iter + 1, len(train_data_loader), train_loss,
                                   valid_loss / len(valid_data_loader), lr_scheduler.get_last_lr()), \
                           " => model saved")
-                    train_loss_list.append(train_loss)
-                    valid_loss_list.append(valid_loss / len(valid_data_loader))
             
                     pred_converted = torch.argmax(pred, dim=1)
                     pred_converted = pred_converted[0]
@@ -83,8 +83,6 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
                     print('{}th epoch {}/{} iter: train loss={}, valid loss={}, lr={}' \
                           .format(epoch + 1, train_iter + 1, len(train_data_loader), train_loss,
                                   valid_loss / len(valid_data_loader), lr_scheduler.get_last_lr()))
-                    train_loss_list.append(train_loss)
-                    valid_loss_list.append(valid_loss / len(valid_data_loader))
                   
     plt.figure()
     plt.plot(train_loss_list, label='Training Loss')
