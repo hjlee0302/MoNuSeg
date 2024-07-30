@@ -94,6 +94,7 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
     plt.title('Training and Validation Loss')
     plt.legend()
     plt.grid(True)
+    plt.savefig('loss_graph.png')
     plt.show()
  
     return min_valid_loss
