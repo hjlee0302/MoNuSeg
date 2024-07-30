@@ -9,6 +9,8 @@ import torch.nn as nn
 
 def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_loader, device, epoch, lr_scheduler,
                     print_freq=10, min_valid_loss=100):
+    train_loss_list = []
+    valid_loss_list = []
     for train_iter, pack in enumerate(train_data_loader):
         train_loss = 0
         valid_loss = 0
@@ -53,6 +55,9 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
                           .format(epoch + 1, train_iter + 1, len(train_data_loader), train_loss / print_freq,
                                   valid_loss / len(valid_data_loader), lr_scheduler.get_last_lr()), \
                           " => model saved")
+                    train_loss_list.append(train_loss / print_freq)
+                    valid_loss_list.append(valid_loss / len(valid_data_loader))
+            
                     pred_converted = torch.argmax(pred, dim=1)
                     pred_converted = pred_converted[0]
                     pred_converted = pred_converted.cpu().numpy().astype(np.uint8)
@@ -78,5 +83,15 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
                     print('{}th epoch {}/{} iter: train loss={}, valid loss={}, lr={}' \
                           .format(epoch + 1, train_iter + 1, len(train_data_loader), train_loss / print_freq,
                                   valid_loss / len(valid_data_loader), lr_scheduler.get_last_lr()))
+                  
+    plt.figure()
+    plt.plot(train_loss_values, label='Training Loss')
+    plt.plot(valid_loss_values, label='Validation Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
  
     return min_valid_loss
