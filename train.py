@@ -7,70 +7,113 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 
-def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_loader, device, num_epochs, lr_scheduler,
+class DiceLoss(nn.Module):
+    def __init__(self):
+        super(DiceLoss, self).__init__()
+    
+    def forward(self, inputs, targets, smooth=1):
+
+        inputs = torch.sigmoid(inputs)
+        #print(inputs.size())
+        targets = F.one_hot(targets, num_classes=2).permute(0, 3, 1, 2).float()
+        #print(targets.size())
+        inputs = inputs.reshape(-1)
+        targets = targets.reshape(-1)
+
+        inter = (inputs * targets).sum()
+        dice = (2. * inter + smooth) / (inputs.sum() + targets.sum() + smooth)
+        return 1 - dice 
+
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=1, gamma=2):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+    def forward(self, inputs, targets):
+        inputs = torch.sigmoid(inputs)
+        targets = F.one_hot(targets, num_classes=2).permute(0,3,1,2).float()
+        #print(targets.size())
+        inputs = inputs.reshape(-1)
+        targets = targets.reshape(-1)
+        #inputs = torch.argmax(inputs, dim=1)
+        BCE_loss = nn.functional.binary_cross_entropy(inputs, targets, reduction='none')
+        pt = torch.exp(-BCE_loss)
+        F_loss = self.alpha * (1-pt)**self.gamma*BCE_loss
+        return F_loss.mean()
+
+
+
+def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_loader, device, epoch, lr_scheduler,
                     print_freq=10, min_valid_loss=100):
-    train_loss_list = []
-    valid_loss_list = []
+    train_loss = 0
+    #val_loss = 0
+    for train_iter, pack in enumerate(train_data_loader):
 
-    for epoch in range(num_epochs):
-        epoch_train_loss = 0
-        epoch_valid_loss = 0
-        model.train()  # Ensure the model is in training mode
+        valid_loss = 0
+        img = pack['img'].to(device)
+        label = pack['label'].to(device)
+        optimizer.zero_grad()
+        pred = model(img)
 
-        for train_iter, pack in enumerate(train_data_loader):
-            img = pack['img'].to(device)
-            label = pack['label'].to(device)
-            optimizer.zero_grad()
-            pred = model(img)
+        #if pred.size() != label.size():
+        #    pred = torch.nn.functional.interpolate(pred, size=label.shape[1:], mode='bilinear', align_corners=False)
 
-            #if pred.size() != label.size():
-            #    pred = torch.nn.functional.interpolate(pred, size=label.shape[1:], mode='bilinear', align_corners=False)
+        loss = criterion(pred, label)
 
-            loss = criterion(pred, label)
-            loss.backward()
-            optimizer.step()
+        loss.backward()
+        optimizer.step()
+        train_loss_part = loss.item()
+        train_loss += loss.item()
 
-            epoch_train_loss += loss.item()
+        if (train_iter + 1) % print_freq == 0:
+            with torch.no_grad():
+                model.eval()
+                for valid_iter, pack in enumerate(valid_data_loader):
+                    img = pack['img'].to(device)
+                    label = pack['label'].to(device)
+                    pred = model(img)
+                    
+         #           if pred.size() != label.size():
+         #               pred = torch.nn.functional.interpolate(pred, size=label.shape[1:], mode='bilinear', align_corners=False)
 
-            if (train_iter + 1) % print_freq == 0:
-                print(f'Epoch [{epoch+1}/{num_epochs}], Step [{train_iter+1}/{len(train_data_loader)}], Loss: {loss.item():.4f}')
+                    loss = criterion(pred, label)
+                    valid_loss += loss.item()
 
-        train_loss_list.append(epoch_train_loss / len(train_data_loader))
+                if min_valid_loss >= valid_loss / len(valid_data_loader):
 
-        with torch.no_grad():
-            model.eval()  # Ensure the model is in evaluation mode
-            for valid_iter, pack in enumerate(valid_data_loader):
-                img = pack['img'].to(device)
-                label = pack['label'].to(device)
-                pred = model(img)
-                
-                #if pred.size() != label.size():
-                #    pred = torch.nn.functional.interpolate(pred, size=label.shape[1:], mode='bilinear', align_corners=False)
+                    torch.save(model.state_dict(),
+                               'best_model_v1.pth')  # set file fname for model save 'best_model_{your name}.pth'
 
-                loss = criterion(pred, label)
-                epoch_valid_loss += loss.item()
+                    min_valid_loss = valid_loss / len(valid_data_loader)
+                    print('{}th epoch {}/{} iter: train loss={}, valid loss={}, lr={}' \
+                          .format(epoch + 1, train_iter + 1, len(train_data_loader), train_loss_part,
+                                  valid_loss / len(valid_data_loader), lr_scheduler.get_last_lr()), \
+                          " => model saved")
+                    val_loss = valid_loss / len(valid_data_loader)
+                    pred_converted = torch.argmax(pred, dim=1)
+                    pred_converted = pred_converted[0]
+                    pred_converted = pred_converted.cpu().numpy().astype(np.uint8)
+                    for i in range(256):
+                        for j in range(256):
+                            if pred_converted[i][j] == 1:
+                                pred_converted[i][j] = 255
+#                    print(np.unique(pred_converted))
+                    pred_converted = Image.fromarray(pred_converted)
+#                    pred_converted.save(f'/home/hojun/results/pred_{train_iter}.png')
+                    label_np = label.cpu().numpy().astype(np.uint8)
+                    label_np = label_np[0]
+                    for i in range(256):
+                        for j in range(256):
+                            if label_np[i][j] == 1:
+                                label_np[i][j] = 255
+                    label_np = Image.fromarray(label_np)
+ #                   label_np.save(f'/home/hojun/results/label_{train_iter}.png')
+                    lr_scheduler.step()
+    
 
-            avg_valid_loss = epoch_valid_loss / len(valid_data_loader)
-            valid_loss_list.append(avg_valid_loss)
-
-            if min_valid_loss >= avg_valid_loss:
-                torch.save(model.state_dict(), 'best_model_v1.pth')
-                min_valid_loss = avg_valid_loss
-                print(f'Epoch [{epoch+1}/{num_epochs}], Validation Loss: {avg_valid_loss:.4f}, Model saved!')
-
-            print(f'Epoch [{epoch+1}/{num_epochs}], Training Loss: {train_loss_list[-1]:.4f}, Validation Loss: {avg_valid_loss:.4f}')
-
-            lr_scheduler.step()
-
-    plt.figure()
-    plt.plot(range(1, num_epochs + 1), train_loss_list, label='Training Loss')
-    plt.plot(range(1, num_epochs + 1), valid_loss_list, label='Validation Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig('loss_graph.png')
-    plt.show()
-
-    return min_valid_loss
+                else:
+                    print('{}th epoch {}/{} iter: train loss={}, valid loss={}, lr={}' \
+                          .format(epoch + 1, train_iter + 1, len(train_data_loader), train_loss_part,
+                                  valid_loss / len(valid_data_loader), lr_scheduler.get_last_lr()))
+                    val_loss = valid_loss / len(valid_data_loader)
+    return train_loss / len(train_data_loader), val_loss, min_valid_loss

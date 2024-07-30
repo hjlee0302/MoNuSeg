@@ -6,11 +6,12 @@ import torch.nn.functional as F
 from Datasets import BratsDataset_seg
 from test import evaluate
 import segmentation_models_pytorch as smp
-from train import DiceLoss, FocalLoss
+import matplotlib.pyplot as plt
+
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu') # gpu가 사용가능하다면 gpu를 사용하고, 아니라면 cpu를 사용함
 print(device)
 ## Hyper-parameters
-num_epochs =100
+num_epochs =30
 
 model_channel = smp.Unet(
     encoder_name="resnet34",        # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
@@ -37,19 +38,32 @@ test_dataset = BratsDataset_seg('/media/NAS/nas_32/hojun/MoNuSeg_data', 'test_pa
 
 
 train_data_loader = torch.utils.data.DataLoader(
-    train_dataset, batch_size=1, shuffle=True, num_workers=4)
+    train_dataset, batch_size=4, shuffle=True, num_workers=4)
 
 valid_data_loader = torch.utils.data.DataLoader(
     valid_dataset, shuffle=True, num_workers=4)
 
 test_data_loader = torch.utils.data.DataLoader(
     test_dataset, num_workers=4)
-#%%
+
+train_loss_list = []
+valid_loss_list = []
 min_val_loss = 100
 for epoch in range(num_epochs):
-    min_val_loss = train_one_epoch(model_channel, optimizer, criterion, train_data_loader, valid_data_loader, device, epoch, lr_scheduler, print_freq=30, min_valid_loss=min_val_loss)
+    train_loss, val_loss, min_val_loss = train_one_epoch(model_channel, optimizer, criterion, train_data_loader, valid_data_loader, device, epoch, lr_scheduler, print_freq=10, min_valid_loss=min_val_loss)
    # print('validation...')
-
+    train_loss_list.append(train_loss)
+    valid_loss_list.append(val_loss)
+plt.figure()
+plt.plot(train_loss_list, label='Training Loss')
+plt.plot(valid_loss_list, label='Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Training and Validation Loss')
+plt.legend()
+plt.grid(True)
+plt.savefig('loss_graph.png')
+plt.show()
 model = smp.Unet(
     encoder_name="resnet34",        # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
     encoder_weights="imagenet",     # use `imagenet` pre-trained weights for encoder initialization
@@ -57,6 +71,6 @@ model = smp.Unet(
     classes=2,                      # model output channels (number of classes in your dataset)
 )
 model.to(device)
-model.load_state_dict(torch.load('/home/hojun/MoNuSeg/best_model_v1.pth'))
+model.load_state_dict(torch.load('best_model_v1.pth'))
 
 evaluate(model, valid_data_loader, device=device)
