@@ -6,45 +6,9 @@ import torch.nn.functional as F
 import torch
 import torch.nn as nn
 
-class DiceLoss(nn.Module):
-    def __init__(self):
-        super(DiceLoss, self).__init__()
-    
-    def forward(self, inputs, targets, smooth=1):
-        inputs = torch.sigmoid(inputs)
-        #print(inputs.size())
-        targets = F.one_hot(targets, num_classes=2).permute(0, 3, 1, 2).float()
-        #print(targets.size())
-        inputs = inputs.reshape(-1)
-        targets = targets.reshape(-1)
-
-        inter = (inputs * targets).sum()
-        dice = (2. * inter + smooth) / (inputs.sum() + targets.sum() + smooth)
-        return 1 - dice 
-
-class FocalLoss(nn.Module):
-    def __init__(self, alpha=1, gamma=2):
-        super(FocalLoss, self).__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-    def forward(self, inputs, targets):
-        inputs = torch.sigmoid(inputs)
-        targets = F.one_hot(targets, num_classes=2).permute(0,3,1,2).float()
-        #print(targets.size())
-        inputs = inputs.reshape(-1)
-        targets = targets.reshape(-1)
-        #inputs = torch.argmax(inputs, dim=1)
-        BCE_loss = nn.functional.binary_cross_entropy(inputs, targets, reduction='none')
-        pt = torch.exp(-BCE_loss)
-        F_loss = self.alpha * (1-pt)**self.gamma*BCE_loss
-        return F_loss.mean()
-
-
 
 def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_loader, device, epoch, lr_scheduler,
                     print_freq=10, min_valid_loss=100):
-    train_loss_values = []
-    valid_loss_values = []
     for train_iter, pack in enumerate(train_data_loader):
         train_loss = 0
         valid_loss = 0
@@ -114,21 +78,5 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
                     print('{}th epoch {}/{} iter: train loss={}, valid loss={}, lr={}' \
                           .format(epoch + 1, train_iter + 1, len(train_data_loader), train_loss / print_freq,
                                   valid_loss / len(valid_data_loader), lr_scheduler.get_last_lr()))
-                    
-    train_loss_values.append(train_loss / print_freq)
-    valid_loss_values.append(valid_loss / len(vaild_data_loader)
-
-    plt.plot(train_loss_values)
-    plt.title('Training Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.grid(True)
-    plt.show()
-                             
-    plt.plot(valid_loss_values)
-    plt.title('Valid Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.grid(True)
-    plt.show()    
+ 
     return min_valid_loss
