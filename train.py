@@ -85,8 +85,8 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
                                   valid_loss / len(valid_data_loader), lr_scheduler.get_last_lr()))
                   
     plt.figure()
-    plt.plot(train_loss_values, label='Training Loss')
-    plt.plot(valid_loss_values, label='Validation Loss')
+    plt.plot(train_loss_list, label='Training Loss')
+    plt.plot(valid_loss_list, label='Validation Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss')
