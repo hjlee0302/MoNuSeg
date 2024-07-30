@@ -43,6 +43,8 @@ class FocalLoss(nn.Module):
 
 def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_loader, device, epoch, lr_scheduler,
                     print_freq=10, min_valid_loss=100):
+    train_loss_values = []
+    valid_loss_values = []
     for train_iter, pack in enumerate(train_data_loader):
         train_loss = 0
         valid_loss = 0
@@ -50,6 +52,7 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
         label = pack['label'].to(device)
         optimizer.zero_grad()
         pred = model(img)
+        
 
         #if pred.size() != label.size():
         #    pred = torch.nn.functional.interpolate(pred, size=label.shape[1:], mode='bilinear', align_corners=False)
@@ -60,6 +63,7 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
         optimizer.step()
 
         train_loss += loss.item()
+        
 
         if (train_iter + 1) % print_freq == 0:
             with torch.no_grad():
@@ -110,5 +114,21 @@ def train_one_epoch(model, optimizer, criterion, train_data_loader, valid_data_l
                     print('{}th epoch {}/{} iter: train loss={}, valid loss={}, lr={}' \
                           .format(epoch + 1, train_iter + 1, len(train_data_loader), train_loss / print_freq,
                                   valid_loss / len(valid_data_loader), lr_scheduler.get_last_lr()))
-        
+                    
+    train_loss_values.append(train_loss / print_freq)
+    valid_loss_values.append(valid_loss / len(vaild_data_loader)
+
+    plt.plot(train_loss_values)
+    plt.title('Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.grid(True)
+    plt.show()
+                             
+    plt.plot(valid_loss_values)
+    plt.title('Valid Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.grid(True)
+    plt.show()    
     return min_valid_loss
