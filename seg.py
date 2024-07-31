@@ -22,8 +22,6 @@ model_channel = smp.Unet(
 model_channel.to(device)
 
 optimizer = torch.optim.Adam(model_channel.parameters(), lr=0.0005)#weight_decay=0.0001
-#criterion = DiceLoss().cuda()
-#criterion = FocalLoss().cuda()
 class_weights = torch.tensor([0.5, 0.5])
 criterion = nn.CrossEntropyLoss(weight=class_weights).to(device)
 #criterion  = DiceLoss().to(device)
