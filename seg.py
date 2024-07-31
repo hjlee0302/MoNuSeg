@@ -25,7 +25,7 @@ optimizer = torch.optim.Adam(model_channel.parameters(), lr=0.0005)#weight_decay
 #criterion = DiceLoss().cuda()
 #criterion = FocalLoss().cuda()
 class_weights = torch.tensor([0.5, 0.5])
-criterion = nn.CrossEntropyLoss(weight=class_weights).cuda()
+criterion = nn.CrossEntropyLoss(weight=class_weights).to(device)
 # step_size 이후 learning rate에 gamma만큼을 곱해줌 ex) 111번 스텝 뒤에 lr에 gamma를 곱해줌
 lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
                                                step_size=111,
