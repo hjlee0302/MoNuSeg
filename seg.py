@@ -7,7 +7,7 @@ from Datasets import BratsDataset_seg
 from test import evaluate
 import segmentation_models_pytorch as smp
 import matplotlib.pyplot as plt
-
+from train.py import DiceLoss, FocalLoss
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu') # gpu가 사용가능하다면 gpu를 사용하고, 아니라면 cpu를 사용함
 print(device)
 ## Hyper-parameters
@@ -26,6 +26,8 @@ optimizer = torch.optim.Adam(model_channel.parameters(), lr=0.0005)#weight_decay
 #criterion = FocalLoss().cuda()
 class_weights = torch.tensor([0.5, 0.5])
 criterion = nn.CrossEntropyLoss(weight=class_weights).to(device)
+#criterion  = DiceLoss().to(device)
+#criterion = FocalLoss().to(device)
 # step_size 이후 learning rate에 gamma만큼을 곱해줌 ex) 111번 스텝 뒤에 lr에 gamma를 곱해줌
 lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
                                                step_size=111,
